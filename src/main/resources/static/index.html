@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Portal de Importação — B.uni</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <div class="topbar-main">
+        <div class="brand">
+            <img src="/images/logo-buni.png" alt="B.uni" class="logo">
+        </div>
+    </div>
+
+    <div class="system-info">
+        <span class="sysinfo-label">PORTAL DE IMPORTAÇÃO B.UNI</span>
+        <span class="sysinfo-sep">·</span>
+        <span class="sysinfo-label" id="sysDate">--/--/----</span>
+        <span class="sysinfo-sep">·</span>
+        <span class="sysinfo-label" id="clock">--:--:--</span>
+    </div>
+
+</header>
+
+<main class="container">
+
+    <!-- ===================== ENVIO DE BASE ===================== -->
+    <section class="card upload-card">
+
+        <div class="card-header">
+            <svg class="card-header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <h2>Envio de Base</h2>
+        </div>
+
+        <label class="upload-area" id="uploadArea">
+            <input type="file" id="fileInput" accept=".csv">
+            <div class="upload-icon-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 16 12 12 8 16"/>
+                    <line x1="12" y1="12" x2="12" y2="21"/>
+                    <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+                </svg>
+            </div>
+            <strong>Clique para selecionar ou arraste o arquivo</strong>
+            <small>Formato aceito: CSV</small>
+        </label>
+
+        <div class="file-tag" id="fileTag" style="display:none">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <span id="fileName">—</span>
+            <button type="button" class="file-tag-clear" id="clearFile" title="Remover arquivo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="upload-actions">
+            <button id="btnImportar" onclick="importarArquivo()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Processar Base
+            </button>
+        </div>
+
+    </section>
+
+    <!-- ===================== RESUMO ===================== -->
+    <section class="card result-card">
+
+        <div class="card-header">
+            <svg class="card-header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            <h2>Resumo do Processamento</h2>
+        </div>
+
+        <div class="status-banner idle" id="statusBanner">
+            <span class="status-icon">
+                <!-- idle -->
+                <svg class="icon-idle" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <!-- processing -->
+                <svg class="icon-processing" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="9" stroke-opacity=".25"/>
+                    <path d="M21 12a9 9 0 00-9-9"/>
+                </svg>
+                <!-- success -->
+                <svg class="icon-success" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <!-- error -->
+                <svg class="icon-error" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                <!-- warning -->
+                <svg class="icon-warning" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </span>
+            <span id="statusBannerText">Aguardando envio da base</span>
+        </div>
+
+        <div class="result-grid">
+
+            <div class="info">
+                <span class="label">Status</span>
+                <span class="value" id="status">Aguardando envio</span>
+            </div>
+
+            <div class="info">
+                <span class="label">Arquivo</span>
+                <span class="value" id="arquivo">—</span>
+            </div>
+
+            <div class="info info-metric">
+                <span class="label">Registros processados</span>
+                <span class="value metric" id="totalLinhas">—</span>
+            </div>
+
+            <div class="info info-metric success-metric">
+                <span class="label">Sucessos</span>
+                <span class="value metric success" id="totalSucesso">—</span>
+            </div>
+
+            <div class="info info-metric error-metric">
+                <span class="label">Erros</span>
+                <span class="value metric error" id="totalErro">—</span>
+            </div>
+
+            <div class="info info-metric warning-metric">
+                <span class="label">Duplicados</span>
+                <span class="value metric warning" id="totalDuplicado">—</span>
+            </div>
+
+            <div class="info">
+                <span class="label">Relatório</span>
+                <span class="value" id="relatorio">—</span>
+            </div>
+
+            <div class="info">
+                <span class="label">Tempo de resposta</span>
+                <span class="value" id="tempoResposta">—</span>
+            </div>
+
+        </div>
+
+        <div class="actions">
+            <a id="downloadBtn" class="download-btn" href="#" download style="display:none">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Baixar Relatório
+            </a>
+        </div>
+
+    </section>
+
+</main>
+
+<footer>
+    <img src="/images/logo-buni.png" alt="B.uni" class="logo">
+    <span class="footer-divider"></span>
+    <span>Portal de Importação B.uni</span>
+    <span class="footer-sep">·</span>
+    <span>Ambiente de Homologação</span>
+</footer>
+
+<script src="/app.js"></script>
+
+<script>
+    // Relógio e data
+    function atualizarHora() {
+        const now = new Date();
+        document.getElementById("clock").textContent = now.toLocaleTimeString("pt-BR");
+        document.getElementById("sysDate").textContent = now.toLocaleDateString("pt-BR");
+    }
+    atualizarHora();
+    setInterval(atualizarHora, 1000);
+
+    // Feedback de seleção de arquivo
+    const fileInput  = document.getElementById("fileInput");
+    const fileTag    = document.getElementById("fileTag");
+    const fileNameEl = document.getElementById("fileName");
+    const clearFile  = document.getElementById("clearFile");
+    const uploadArea = document.getElementById("uploadArea");
+
+    fileInput.addEventListener("change", function () {
+        if (this.files && this.files[0]) {
+            fileNameEl.textContent = this.files[0].name;
+            fileTag.style.display  = "flex";
+            uploadArea.classList.add("has-file");
+        }
+    });
+
+    clearFile.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        fileInput.value        = "";
+        fileTag.style.display  = "none";
+        uploadArea.classList.remove("has-file");
+    });
+
+    // Arrastar e soltar
+    uploadArea.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        this.classList.add("drag-over");
+    });
+    uploadArea.addEventListener("dragleave", function (e) {
+        if (!this.contains(e.relatedTarget)) {
+            this.classList.remove("drag-over");
+        }
+    });
+    uploadArea.addEventListener("drop", function (e) {
+        e.preventDefault();
+        this.classList.remove("drag-over");
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            try {
+                const dt = new DataTransfer();
+                dt.items.add(files[0]);
+                fileInput.files = dt.files;
+                fileInput.dispatchEvent(new Event("change"));
+            } catch (_) { /* fallback: usuário pode selecionar manualmente */ }
+        }
+    });
+</script>
+
+</body>
+</html>

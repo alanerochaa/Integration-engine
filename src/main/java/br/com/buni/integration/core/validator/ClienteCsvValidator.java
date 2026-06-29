@@ -1,0 +1,121 @@
+package br.com.buni.integration.core.validator;
+
+import br.com.buni.integration.core.model.csv.ClienteCsv;
+import br.com.buni.integration.core.util.StringUtils;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Component
+public class ClienteCsvValidator {
+
+    public List<String> validar(ClienteCsv cliente) {
+
+        List<String> erros = new ArrayList<>();
+
+        validarObrigatorio(cliente.getCpf(), "CPF", erros);
+        validarObrigatorio(cliente.getNome(), "NOME", erros);
+        validarObrigatorio(cliente.getCep(), "CEP", erros);
+        validarObrigatorio(cliente.getAgencia(), "CODAGENCIAPAGTO", erros);
+        validarObrigatorio(cliente.getConta(), "CONTAPAGAMENTO", erros);
+        validarObrigatorio(cliente.getDataNascimento(), "DTNASCIMENTO", erros);
+        validarObrigatorio(cliente.getSalario(), "SALARIO", erros);
+
+        validarCpf(cliente.getCpf(), erros);
+        validarEmail(cliente, erros);
+        validarRenda(cliente.getSalario(), erros);
+
+        return erros;
+    }
+
+    private void validarObrigatorio(
+            String valor,
+            String campo,
+            List<String> erros
+    ) {
+        if (StringUtils.vazio(valor)) {
+            erros.add("Campo obrigatório ausente: " + campo);
+        }
+    }
+
+    private void validarCpf(String cpf, List<String> erros) {
+
+        if (StringUtils.vazio(cpf)) return;
+
+        String limpo = StringUtils.normalizarCpf(cpf);
+
+        if (limpo.length() != 11) {
+            erros.add("CPF invalido: esperado 11 digitos, recebido " + limpo.length());
+            return;
+        }
+
+        if (!isCpfValido(limpo)) {
+            erros.add("CPF invalido: digitos verificadores incorretos (" + limpo + ")");
+        }
+    }
+
+    /** Valida os dígitos verificadores do CPF pelo algoritmo padrão brasileiro. */
+    private boolean isCpfValido(String cpf) {
+
+        // CPFs com todos os dígitos iguais são matematicamente válidos mas semanticamente inválidos
+        if (cpf.chars().distinct().count() == 1) return false;
+
+        int[] d = cpf.chars().map(c -> c - '0').toArray();
+
+        int sum = 0;
+        for (int i = 0; i < 9; i++) sum += d[i] * (10 - i);
+        int first = (sum * 10 % 11) % 10;
+        if (first != d[9]) return false;
+
+        sum = 0;
+        for (int i = 0; i < 10; i++) sum += d[i] * (11 - i);
+        int second = (sum * 10 % 11) % 10;
+        return second == d[10];
+    }
+
+    private void validarEmail(
+            ClienteCsv cliente,
+            List<String> erros
+    ) {
+        String email = cliente.getEmailPessoal();
+
+        if (StringUtils.vazio(email)) {
+            email = cliente.getEmailProfissional();
+        }
+
+        if (StringUtils.vazio(email)) {
+            erros.add("Email obrigatório ausente: EMAILPESSOAL ou EMAILPROFISSIONAL");
+            return;
+        }
+
+        if (!email.contains("@")) {
+            erros.add("Email inválido: " + email);
+        }
+    }
+
+    private void validarRenda(
+            String renda,
+            List<String> erros
+    ) {
+        if (StringUtils.vazio(renda)) {
+            return;
+        }
+
+        try {
+            Double valor = Double.parseDouble(
+                    renda
+                            .replace(".", "")
+                            .replace(",", ".")
+                            .trim()
+            );
+
+            if (valor <= 0) {
+                erros.add("Salário inválido: valor deve ser maior que zero");
+            }
+
+        } catch (Exception e) {
+            erros.add("Salário inválido: " + renda);
+        }
+    }
+}
