@@ -10,6 +10,7 @@ async function importarArquivo() {
     const totalDuplicado   = document.getElementById("totalDuplicado");
     const relatorio        = document.getElementById("relatorio");
     const downloadBtn      = document.getElementById("downloadBtn");
+    const excelBtn         = document.getElementById("excelBtn");
     const btnImportar      = document.getElementById("btnImportar");
     const tempoResposta    = document.getElementById("tempoResposta");
 
@@ -29,7 +30,7 @@ async function importarArquivo() {
     btnImportar.classList.add("loading");
 
     statusBannerEl.className       = "status-banner processing";
-    statusBannerTxt.textContent    = "Processando arquivo no backend…";
+    statusBannerTxt.textContent = "Processando arquivo...";
     status.textContent             = "Em processamento";
     arquivo.textContent            = file.name;
 
@@ -44,10 +45,8 @@ async function importarArquivo() {
 
     if (tempoResposta) tempoResposta.textContent = "—";
 
-    if (downloadBtn) {
-        downloadBtn.style.display = "none";
-        downloadBtn.removeAttribute("href");
-    }
+    if (downloadBtn) { downloadBtn.style.display = "none"; downloadBtn.removeAttribute("href"); }
+    if (excelBtn)    { excelBtn.style.display    = "none"; excelBtn.removeAttribute("href"); }
 
     try {
         const response = await fetch("/importar/clientes", {
@@ -94,11 +93,16 @@ async function importarArquivo() {
             statusBannerTxt.textContent = "Arquivo processado com sucesso.";
         }
 
-        relatorio.textContent = data.relatorio || "Relatório gerado";
+        relatorio.textContent = "Relatório gerado";
 
         if (data.downloadUrl && downloadBtn) {
             downloadBtn.href          = data.downloadUrl;
+            downloadBtn.target        = "_blank";
             downloadBtn.style.display = "inline-flex";
+        }
+        if (data.excelUrl && excelBtn) {
+            excelBtn.href          = data.excelUrl;
+            excelBtn.style.display = "inline-flex";
         }
 
     } catch (error) {

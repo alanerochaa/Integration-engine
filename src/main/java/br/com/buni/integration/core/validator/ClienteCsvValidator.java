@@ -19,6 +19,7 @@ public class ClienteCsvValidator {
         validarObrigatorio(cliente.getCep(), "CEP", erros);
         validarObrigatorio(cliente.getAgencia(), "CODAGENCIAPAGTO", erros);
         validarObrigatorio(cliente.getConta(), "CONTAPAGAMENTO", erros);
+        validarBanco(cliente, erros);
         validarObrigatorio(cliente.getDataNascimento(), "DTNASCIMENTO", erros);
         validarObrigatorio(cliente.getSalario(), "SALARIO", erros);
 
@@ -92,6 +93,28 @@ public class ClienteCsvValidator {
         if (!email.contains("@")) {
             erros.add("Email inválido: " + email);
         }
+    }
+
+    /**
+     * CODBANCOPAGTO tem prioridade sobre BANCO.
+     * BANCO só é aceito como código bancário se for numérico.
+     * Texto como "B.Uni" é ignorado — erro apenas se ambos forem inválidos/ausentes.
+     */
+    private void validarBanco(ClienteCsv cliente, List<String> erros) {
+        String codBancoPagto = StringUtils.limparNumero(cliente.getCompensacao());
+        if (!codBancoPagto.isBlank()) return;
+
+        String banco = StringUtils.limparNumero(cliente.getBanco());
+        if (!banco.isBlank()) return;
+
+        String valRecebido = "(CODBANCOPAGTO="
+                + nvl(cliente.getCompensacao())
+                + ", BANCO=" + nvl(cliente.getBanco()) + ")";
+        erros.add("Banco inválido: preencher CODBANCOPAGTO com código numérico " + valRecebido);
+    }
+
+    private String nvl(String v) {
+        return v != null ? v.trim() : "ausente";
     }
 
     private void validarRenda(

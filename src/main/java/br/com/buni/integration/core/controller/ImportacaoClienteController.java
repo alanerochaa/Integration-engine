@@ -42,6 +42,7 @@ public class ImportacaoClienteController {
         ProcessamentoResult result = clienteImportService.processar(filename, clientes);
 
         String nomeRelatorio = result.getCaminhoRelatorio().getFileName().toString();
+        String nomeExcel     = result.getCaminhoExcel().getFileName().toString();
 
         return ResponseEntity.ok(
                 Map.of(
@@ -53,7 +54,8 @@ public class ImportacaoClienteController {
                         "totalDuplicado",result.getTotalDuplicado(),
                         "tempoTotalMs",  result.getTempoTotalMs(),
                         "relatorio",     nomeRelatorio,
-                        "downloadUrl",   "/importar/relatorios/" + nomeRelatorio
+                        "downloadUrl",   "/importar/relatorios/" + nomeRelatorio,
+                        "excelUrl",      "/importar/relatorios/" + nomeExcel
                 )
         );
     }
@@ -83,12 +85,17 @@ public class ImportacaoClienteController {
             return ResponseEntity.notFound().build();
         }
 
+        boolean isExcel = nomeArquivo.endsWith(".xlsx");
+        MediaType contentType = isExcel
+                ? MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                : MediaType.TEXT_HTML;
+        ContentDisposition disposition = isExcel
+                ? ContentDisposition.attachment().filename(nomeArquivo).build()
+                : ContentDisposition.inline().filename(nomeArquivo).build();
+
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("text/csv"))
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.attachment().filename(nomeArquivo).build().toString()
-                )
+                .contentType(contentType)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .body(resource);
     }
 }

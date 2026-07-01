@@ -8,6 +8,7 @@ import br.com.buni.integration.core.model.dto.ExecutionReportLine;
 import br.com.buni.integration.core.model.dto.ProcessamentoResult;
 import br.com.buni.integration.core.model.request.ClienteRequest;
 import br.com.buni.integration.core.model.response.InclusaoClienteResponse;
+import br.com.buni.integration.core.report.ExcelReportGenerator;
 import br.com.buni.integration.core.report.ImportacaoReportGenerator;
 import br.com.buni.integration.core.util.StringUtils;
 import br.com.buni.integration.core.validator.ClienteCsvValidator;
@@ -32,6 +33,7 @@ public class ClienteImportService {
     private final ClienteMapper mapper;
     private final BuniClienteConnector clienteConnector;
     private final ImportacaoReportGenerator reportService;
+    private final ExcelReportGenerator excelReportGenerator;
     private final LogService logService;
 
     @Value("${buni.ambiente:HML}")
@@ -121,7 +123,8 @@ public class ClienteImportService {
         long totalMs = Duration.between(start, LocalDateTime.now()).toMillis();
         String statusGeral = resolveOverallStatus(totalSucesso, totalErro, totalDuplicado);
 
-        Path reportPath = reportService.gerarRelatorioCsv(nomeArquivo, report);
+        Path reportPath = reportService.gerarRelatorio(nomeArquivo, report);
+        Path excelPath  = excelReportGenerator.gerarExcel(nomeArquivo, report);
         logService.fimProcessamento(nomeArquivo, reportPath.toString());
 
         return ProcessamentoResult.builder()
@@ -131,6 +134,7 @@ public class ClienteImportService {
                 .totalDuplicado(totalDuplicado)
                 .tempoTotalMs(totalMs)
                 .caminhoRelatorio(reportPath)
+                .caminhoExcel(excelPath)
                 .build();
     }
 
@@ -183,6 +187,18 @@ public class ClienteImportService {
 
     private ExecutionReportLine buildValidationErrorLine(String arquivo, Integer linha, ClienteCsv cliente,
             List<String> erros, String importId, String correlationId, long tempoMs) {
+
+        boolean isBancoError = erros.stream().anyMatch(e ->
+                e.contains("Banco inválido") || e.contains("CODBANCOPAGTO") || e.contains("BANCO"));
+
+        String campoErro = isBancoError ? "CODBANCOPAGTO/BANCO" : "";
+        String valorRecebido = isBancoError
+                ? "CODBANCOPAGTO=" + nvl(cliente.getCompensacao()) + "; BANCO=" + nvl(cliente.getBanco())
+                : "";
+        String acaoSugerida = isBancoError
+                ? "Preencher CODBANCOPAGTO com código bancário numérico no CSV"
+                : "Corrigir dados de entrada no CSV";
+
         return ExecutionReportLine.builder()
                 .dataHoraExecucao(LocalDateTime.now())
                 .nomeArquivo(arquivo).linhaCsv(linha)
@@ -190,11 +206,17 @@ public class ClienteImportService {
                 .cpf(StringUtils.normalizarCpf(cliente.getCpf())).nome(cliente.getNome())
                 .status("ERRO").codigoHttp(0)
                 .mensagemApi("Erro de validacao no CSV")
+                .campoErro(campoErro)
+                .valorRecebido(valorRecebido)
                 .motivoErro(String.join(" | ", erros))
-                .acaoSugerida("Corrigir dados de entrada no CSV")
+                .acaoSugerida(acaoSugerida)
                 .fallbackAplicado(false)
                 .tempoProcessamentoMs(tempoMs).observacao(cliente.getObservacaoEndereco())
                 .build();
+    }
+
+    private String nvl(String v) {
+        return v != null ? v.trim() : "ausente";
     }
 
     private ExecutionReportLine buildApiErrorLine(String arquivo, Integer linha, ClienteCsv cliente,

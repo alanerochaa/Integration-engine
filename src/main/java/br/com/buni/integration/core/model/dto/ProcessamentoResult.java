@@ -14,4 +14,5 @@ public class ProcessamentoResult {
     private final long totalDuplicado;
     private final long tempoTotalMs;
     private final Path caminhoRelatorio;
+    private final Path caminhoExcel;
 }
