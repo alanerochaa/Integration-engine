@@ -22,13 +22,7 @@ public class ClienteMapper {
         ClienteRequest request = new ClienteRequest();
 
         String cpf = resolverCpf(csv);
-
         Double renda = resolverRenda(csv.getSalario());
-
-        // Garante que nunca seja enviada renda inválida
-        if (renda == null || renda <= 0) {
-            renda = 1518.00;
-        }
 
         request.setTipoPessoa("1");
         request.setCpf(cpf);
@@ -36,23 +30,22 @@ public class ClienteMapper {
         request.setNacionalidade("1");
         request.setTipoDocumento("RG");
         request.setNumeroDocumento(cpf);
-        request.setUfDocumento("SP"); // fixo: CSV não possui UF do documento
-        request.setDataEmissaoDocumento("2015-06-18T19:54:03Z"); // fixo: CSV não possui data de emissão
+        // Campos fixos (não existem no CSV)
+        request.setUfDocumento("SP");
+        request.setDataEmissaoDocumento("2015-06-18T19:54:03Z");
         request.setOrgaoEmissorDocumento("SSP");
-        request.setEstadoCivil("1"); // padrão fixo (SOLTEIRO): CSV não possui estado civil
+        request.setEstadoCivil("1");
+        request.setNaturalidade("1");
         request.setSexo(resolverSexo(csv.getSexo()));
         request.setDataNascimento(DateUtils.formatarDataBrParaIso(csv.getDataNascimento()));
         request.setValorRenda(renda);
         request.setPep(false);
         request.setEscolaridade(resolverEscolaridade(csv.getEscolaridade()));
-        request.setNaturalidade("1");
         request.setEmail(resolverEmail(csv));
-
         request.setDadoEndereco(montarEndereco(csv));
         request.setTelefones(montarTelefones(csv));
         request.setDadoProfissional(montarProfissional(csv));
         request.setDadosBancarios(montarDadosBancarios(csv));
-
         return request;
     }
 
@@ -278,23 +271,24 @@ public class ClienteMapper {
 
     private String resolverAgencia(String agencia) {
 
-        String agenciaLimpa = StringUtils.limparNumero(agencia);
-
-        if (StringUtils.vazio(agenciaLimpa)) {
+        if (StringUtils.vazio(agencia)) {
             return "0001";
         }
 
-        if (agenciaLimpa.length() < 4) {
-            agenciaLimpa = String.format("%4s", agenciaLimpa).replace(' ', '0');
+        String limpa = agencia
+                .trim()
+                .replaceAll("[^0-9]", "");
+
+        if (limpa.isBlank()) {
+            return "0001";
         }
 
-        if (agenciaLimpa.length() > 4) {
-            agenciaLimpa = agenciaLimpa.substring(agenciaLimpa.length() - 4);
+        if (limpa.length() > 4) {
+            limpa = limpa.substring(limpa.length() - 4);
         }
 
-        return agenciaLimpa;
+        return String.format("%4s", limpa).replace(' ', '0');
     }
-
     /**
      * CODBANCOPAGTO tem prioridade (código COMPE numérico).
      * Se vazio/não-numérico, tenta BANCO somente se for numérico.
@@ -305,16 +299,24 @@ public class ClienteMapper {
         String codBancoPagto = StringUtils.limparNumero(csv.getCompensacao());
 
         if (!StringUtils.vazio(codBancoPagto)) {
-            return codBancoPagto;
+            return padCodigoBanco(codBancoPagto);
         }
 
         String banco = StringUtils.limparNumero(csv.getBanco());
 
         if (!StringUtils.vazio(banco)) {
-            return banco;
+            return padCodigoBanco(banco);
         }
 
         return "530";
+    }
+
+    private String padCodigoBanco(String codigo) {
+        try {
+            return String.format("%03d", Integer.parseInt(codigo));
+        } catch (NumberFormatException e) {
+            return codigo;
+        }
     }
 
 
@@ -328,7 +330,7 @@ public class ClienteMapper {
         }
 
         String observacaoBancaria =
-                "AgenciaDigito=0 aplicado por fallback em homologação";
+                "AgenciaDigito vazio aplicado por fallback";
 
         if (!observacaoAtual.contains(observacaoBancaria)) {
 
@@ -350,29 +352,20 @@ public class ClienteMapper {
             return "0000000001";
         }
 
-        String contaLimpa = contaPagamento.trim();
+        String conta = contaPagamento.trim();
 
-        if (contaLimpa.contains("-")) {
-            contaLimpa = StringUtils.limparNumero(
-                    contaLimpa.substring(0, contaLimpa.lastIndexOf("-"))
-            );
-        } else {
-            contaLimpa = StringUtils.limparNumero(contaLimpa);
-        }
+        // remove tudo que não for número
+        conta = conta.replaceAll("[^0-9]", "");
 
-        if (StringUtils.vazio(contaLimpa)) {
+        if (conta.isBlank()) {
             return "0000000001";
         }
 
-        if (contaLimpa.length() < 10) {
-            contaLimpa = String.format("%10s", contaLimpa).replace(' ', '0');
+        if (conta.length() > 10) {
+            conta = conta.substring(conta.length() - 10);
         }
 
-        if (contaLimpa.length() > 10) {
-            contaLimpa = contaLimpa.substring(contaLimpa.length() - 10);
-        }
-
-        return contaLimpa;
+        return String.format("%10s", conta).replace(' ', '0');
     }
 
     private String resolverContaDigito(String contaPagamento) {
@@ -381,17 +374,15 @@ public class ClienteMapper {
             return "0";
         }
 
-        String contaLimpa =
-                contaPagamento.trim();
+        String valor = contaPagamento.trim();
 
-        if (contaLimpa.contains("-")) {
-            return StringUtils.limparNumero(
-                    contaLimpa.substring(
-                            contaLimpa.lastIndexOf("-") + 1
-                    )
-            );
+        if (valor.contains("-")) {
+            return valor.substring(valor.lastIndexOf("-") + 1).trim();
         }
 
+        if (valor.contains("/")) {
+            return valor.substring(valor.lastIndexOf("/") + 1).trim();
+        }
         return "0";
     }
 
@@ -441,7 +432,6 @@ public class ClienteMapper {
         else if (!StringUtils.vazio(csv.getEmailProfissional())) {
             email = csv.getEmailProfissional().trim();
         }
-
         // Não possui e-mail
         if (StringUtils.vazio(email)) {
             return cpf + "@fallback.local";
@@ -501,7 +491,7 @@ public class ClienteMapper {
 
     private Double resolverRenda(String salario) {
 
-        final Double RENDA_FALLBACK = 1518.00;
+        final double RENDA_FALLBACK = 1518.00;
 
         if (StringUtils.vazio(salario)) {
             return RENDA_FALLBACK;
@@ -516,13 +506,9 @@ public class ClienteMapper {
                     .replace(".", "")
                     .replace(",", ".");
 
-            Double renda = Double.parseDouble(valorNormalizado);
+            double renda = Double.parseDouble(valorNormalizado);
 
-            if (renda == null || renda <= 0) {
-                return RENDA_FALLBACK;
-            }
-
-            return renda;
+            return renda > 0 ? renda : RENDA_FALLBACK;
 
         } catch (Exception e) {
             return RENDA_FALLBACK;

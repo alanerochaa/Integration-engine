@@ -32,26 +32,68 @@ public class BuniClienteConnector {
     public InclusaoClienteResponse incluirCliente(ClienteRequest request) {
 
         String token = authConnector.gerarToken();
-        HttpEntity<ClienteRequest> entity = new HttpEntity<>(request, criarHeaders(token));
+
+        HttpEntity<ClienteRequest> entity =
+                new HttpEntity<>(request, criarHeaders(token));
+
+        ClienteRequest.DadoBancario banco =
+                request.getDadosBancarios().getDadoBancario().get(0);
 
         try {
 
-            ResponseEntity<InclusaoClienteResponse> response = restTemplate.exchange(
-                    inclusaoClienteUrl, HttpMethod.POST, entity, InclusaoClienteResponse.class
-            );
+            log.info("==========================================================");
+            log.info("INCLUSÃO DE CLIENTE");
+            log.info("CPF............: {}", request.getCpf());
+            log.info("Banco..........: {}", banco.getBanco());
+            log.info("Compensacao....: {}", banco.getCompensacao());
+            log.info("Agencia........: {}", banco.getAgencia());
+            log.info("AgenciaDigito..: {}", banco.getAgenciaDigito());
+            log.info("Conta..........: {}", banco.getConta());
+            log.info("ContaDigito....: {}", banco.getContaDigito());
+            log.info("TipoConta......: {}", banco.getTipoConta());
+            log.info("==========================================================");
+
+            ResponseEntity<InclusaoClienteResponse> response =
+                    restTemplate.exchange(
+                            inclusaoClienteUrl,
+                            HttpMethod.POST,
+                            entity,
+                            InclusaoClienteResponse.class
+                    );
 
             InclusaoClienteResponse body = response.getBody();
+
             if (body == null) {
-                throw new RuntimeException("API retornou resposta vazia na inclusao do cliente.");
+                throw new RuntimeException(
+                        "API retornou resposta vazia na inclusão do cliente."
+                );
             }
 
             return body;
 
         } catch (HttpStatusCodeException ex) {
-            log.error("Erro HTTP ao incluir cliente CPF {}: [{}] {}",
-                    request.getCpf(), ex.getStatusCode().value(), ex.getResponseBodyAsString());
+
+            log.error("==========================================================");
+            log.error("ERRO AO INCLUIR CLIENTE");
+            log.error("CPF............: {}", request.getCpf());
+            log.error("Banco..........: {}", banco.getBanco());
+            log.error("Compensacao....: {}", banco.getCompensacao());
+            log.error("Agencia........: {}", banco.getAgencia());
+            log.error("AgenciaDigito..: {}", banco.getAgenciaDigito());
+            log.error("Conta..........: {}", banco.getConta());
+            log.error("ContaDigito....: {}", banco.getContaDigito());
+            log.error("TipoConta......: {}", banco.getTipoConta());
+            log.error("HTTP...........: {}", ex.getStatusCode().value());
+            log.error("Resposta API...: {}", ex.getResponseBodyAsString());
+            log.error("==========================================================");
+
             throw new RuntimeException(
-                    String.format("[HTTP %d] %s", ex.getStatusCode().value(), ex.getResponseBodyAsString()), ex
+                    String.format(
+                            "[HTTP %d] %s",
+                            ex.getStatusCode().value(),
+                            ex.getResponseBodyAsString()
+                    ),
+                    ex
             );
         }
     }
@@ -61,62 +103,97 @@ public class BuniClienteConnector {
      *
      * Regras:
      * - HTTP 404 → não encontrado, segue para inclusão.
-     * - Código de API 100000026 → "cliente não encontrado", segue para inclusão.
-     * - Qualquer outro erro HTTP → propaga como exceção para o service tratar.
+     * - Código de API 100000026 → cliente não encontrado, segue para inclusão.
+     * - Outros erros → propagados para tratamento no service.
      */
     public boolean clienteExistePorCpf(String cpf) {
 
         String token = authConnector.gerarToken();
-        HttpEntity<Void> entity = new HttpEntity<>(criarHeaders(token));
 
-        String url = consultaClienteCpfUrl
-                + "?TipoConsulta=" + TipoConsultaClienteEnum.CLIENTE.getCodigo()
-                + "&CPF=" + cpf;
+        HttpEntity<Void> entity =
+                new HttpEntity<>(criarHeaders(token));
+
+        String url =
+                consultaClienteCpfUrl
+                        + "?TipoConsulta=" + TipoConsultaClienteEnum.CLIENTE.getCodigo()
+                        + "&CPF=" + cpf;
 
         try {
 
             log.info("Consultando CPF antes da inclusão: {}", cpf);
 
-            ResponseEntity<ConsultaClienteCpfResponse> response = restTemplate.exchange(
-                    url, HttpMethod.GET, entity, ConsultaClienteCpfResponse.class
-            );
+            ResponseEntity<ConsultaClienteCpfResponse> response =
+                    restTemplate.exchange(
+                            url,
+                            HttpMethod.GET,
+                            entity,
+                            ConsultaClienteCpfResponse.class
+                    );
 
             ConsultaClienteCpfResponse body = response.getBody();
 
-            if (body == null) return false;
+            if (body == null) {
+                return false;
+            }
 
             boolean exists = body.possuiCliente();
+
             log.info("CPF {} encontrado na base: {}", cpf, exists);
+
             return exists;
 
         } catch (HttpClientErrorException.NotFound ex) {
+
             log.info("CPF {} não encontrado na base (HTTP 404).", cpf);
             return false;
 
         } catch (HttpClientErrorException ex) {
+
             String responseBody = ex.getResponseBodyAsString();
+
             if (responseBody.contains("100000026")
                     || responseBody.contains("Nao foi encontrado cliente")
                     || responseBody.contains("Não foi encontrado cliente")) {
-                log.info("CPF {} não encontrado na base (código API 100000026) — seguindo para inclusão.", cpf);
+
+                log.info("CPF {} não encontrado na base (Código 100000026).", cpf);
                 return false;
             }
-            log.error("Erro ao consultar CPF {}: [{}] {}", cpf, ex.getStatusCode().value(), responseBody);
+
+            log.error(
+                    "Erro ao consultar CPF {}: [{}] {}",
+                    cpf,
+                    ex.getStatusCode().value(),
+                    responseBody
+            );
+
             throw new RuntimeException(
-                    String.format("[HTTP %d] %s", ex.getStatusCode().value(), responseBody), ex
+                    String.format(
+                            "[HTTP %d] %s",
+                            ex.getStatusCode().value(),
+                            responseBody
+                    ),
+                    ex
             );
 
         } catch (Exception ex) {
+
             log.error("Falha técnica ao consultar CPF {}", cpf, ex);
-            throw new RuntimeException("Falha tecnica ao consultar CPF: " + ex.getMessage(), ex);
+
+            throw new RuntimeException(
+                    "Falha técnica ao consultar CPF: " + ex.getMessage(),
+                    ex
+            );
         }
     }
 
     private HttpHeaders criarHeaders(String token) {
+
         HttpHeaders headers = new HttpHeaders();
+
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
         return headers;
     }
 }
