@@ -8,6 +8,7 @@ import java.nio.file.Path;
 @Getter
 @Builder
 public class ProcessamentoResult {
+    private final String importId;
     private final String statusGeral;
     private final long totalSucesso;
     private final long totalErro;

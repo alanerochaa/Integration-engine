@@ -13,6 +13,11 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 
+/**
+ * Componente de autenticação OAuth reutilizável para todos os módulos da integração B.uni.
+ * Cada módulo possui credenciais próprias e um cache de token independente.
+ * A lógica HTTP de obtenção de token é compartilhada (sem duplicação).
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -20,82 +25,141 @@ public class BuniAuthConnector {
 
     private final RestTemplate restTemplate;
 
-    @Value("${buni.auth.url}")
-    private String authUrl;
+    // ─── Clientes ────────────────────────────────────────────────────────────────
 
-    @Value("${buni.auth.client-id}")
-    private String clientId;
+    @Value("${buni.cliente.auth.url}")
+    private String clienteAuthUrl;
 
-    @Value("${buni.auth.client-secret}")
-    private String clientSecret;
+    @Value("${buni.cliente.auth.client-id}")
+    private String clienteClientId;
 
-    @Value("${buni.auth.grant-type}")
-    private String grantType;
+    @Value("${buni.cliente.auth.client-secret}")
+    private String clienteClientSecret;
 
-    @Value("${buni.auth.username}")
-    private String username;
+    @Value("${buni.cliente.auth.grant-type}")
+    private String clienteGrantType;
 
-    @Value("${buni.auth.password}")
-    private String password;
+    @Value("${buni.cliente.auth.username}")
+    private String clienteUsername;
 
-    private volatile String cachedToken;
-    private volatile LocalDateTime tokenExpiresAt;
+    @Value("${buni.cliente.auth.password}")
+    private String clientePassword;
+
+    // ─── Funcionários ────────────────────────────────────────────────────────────
+
+    @Value("${buni.funcionario.auth.url}")
+    private String funcionarioAuthUrl;
+
+    @Value("${buni.funcionario.auth.client-id}")
+    private String funcionarioClientId;
+
+    @Value("${buni.funcionario.auth.client-secret}")
+    private String funcionarioClientSecret;
+
+    @Value("${buni.funcionario.auth.grant-type}")
+    private String funcionarioGrantType;
+
+    @Value("${buni.funcionario.auth.username}")
+    private String funcionarioUsername;
+
+    @Value("${buni.funcionario.auth.password}")
+    private String funcionarioPassword;
+
+    // ─── Cache por módulo ────────────────────────────────────────────────────────
+
+    private volatile String cachedTokenCliente;
+    private volatile LocalDateTime tokenClienteExpiresAt;
+
+    private volatile String cachedTokenFuncionario;
+    private volatile LocalDateTime tokenFuncionarioExpiresAt;
+
+    // ─── API pública ─────────────────────────────────────────────────────────────
 
     /**
-     * Retorna um token OAuth válido, reutilizando o cache quando ainda estiver vigente.
-     * Sincronizado para evitar que threads concorrentes gerem tokens duplicados sob carga.
+     * Token OAuth para o módulo de Clientes.
+     * Sincronizado para evitar múltiplas renovações simultâneas.
      */
     public synchronized String gerarToken() {
-
-        if (isTokenValid()) {
-            log.debug("Reutilizando token OAuth em cache.");
-            return cachedToken;
+        if (isTokenValido(cachedTokenCliente, tokenClienteExpiresAt)) {
+            log.debug("Reutilizando token OAuth do módulo Clientes.");
+            return cachedTokenCliente;
         }
+        TokenResponse resp = buscarToken(
+                clienteAuthUrl, clienteClientId, clienteClientSecret,
+                clienteGrantType, clienteUsername, clientePassword,
+                "Clientes"
+        );
+        long expiresIn = resp.getExpiresIn() != null ? resp.getExpiresIn() : 300L;
+        cachedTokenCliente     = resp.resolverToken();
+        tokenClienteExpiresAt  = LocalDateTime.now().plusSeconds(expiresIn - 60);
+        log.info("Novo token OAuth (Clientes) gerado. Válido até: {}", tokenClienteExpiresAt);
+        return cachedTokenCliente;
+    }
 
+    /**
+     * Token OAuth para o módulo de Funcionários.
+     * Sincronizado para evitar múltiplas renovações simultâneas.
+     */
+    public synchronized String gerarTokenFuncionario() {
+        if (isTokenValido(cachedTokenFuncionario, tokenFuncionarioExpiresAt)) {
+            log.debug("Reutilizando token OAuth do módulo Funcionários.");
+            return cachedTokenFuncionario;
+        }
+        TokenResponse resp = buscarToken(
+                funcionarioAuthUrl, funcionarioClientId, funcionarioClientSecret,
+                funcionarioGrantType, funcionarioUsername, funcionarioPassword,
+                "Funcionários"
+        );
+        long expiresIn = resp.getExpiresIn() != null ? resp.getExpiresIn() : 300L;
+        cachedTokenFuncionario    = resp.resolverToken();
+        tokenFuncionarioExpiresAt = LocalDateTime.now().plusSeconds(expiresIn - 60);
+        log.info("Novo token OAuth (Funcionários) gerado. Válido até: {}", tokenFuncionarioExpiresAt);
+        return cachedTokenFuncionario;
+    }
+
+    // ─── Lógica compartilhada de obtenção de token ───────────────────────────────
+
+    private TokenResponse buscarToken(String url, String clientId, String clientSecret,
+                                      String grantType, String username, String password,
+                                      String modulo) {
         try {
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
             MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-            body.add("client_id", clientId);
+            body.add("client_id",     clientId);
             body.add("client_secret", clientSecret);
-            body.add("grant_type", grantType);
-            body.add("username", username);
-            body.add("password", password);
+            body.add("grant_type",    grantType);
+            body.add("username",      username);
+            body.add("password",      password);
 
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
             ResponseEntity<TokenResponse> response = restTemplate.exchange(
-                    authUrl, HttpMethod.POST, request, TokenResponse.class
+                    url, HttpMethod.POST, request, TokenResponse.class
             );
 
             if (response.getBody() == null || response.getBody().resolverToken() == null) {
-                throw new RuntimeException("Token nao retornado pela API.");
+                throw new RuntimeException("Token não retornado pela API [" + modulo + "].");
             }
 
-            TokenResponse tokenResponse = response.getBody();
-            long expiresIn = tokenResponse.getExpiresIn() != null ? tokenResponse.getExpiresIn() : 300L;
-
-            cachedToken = tokenResponse.resolverToken();
-            // Renova 60 segundos antes do vencimento real para evitar usar token expirado no meio de uma requisição
-            tokenExpiresAt = LocalDateTime.now().plusSeconds(expiresIn - 60);
-
-            log.info("Novo token OAuth gerado. Válido até: {}", tokenExpiresAt);
-            return cachedToken;
+            return response.getBody();
 
         } catch (HttpStatusCodeException e) {
-            log.error("Authentication error: {}", e.getResponseBodyAsString());
-            throw new RuntimeException("Falha ao gerar token: " + e.getResponseBodyAsString());
-
+            log.error("Erro de autenticação [{}]: {}", modulo, e.getResponseBodyAsString());
+            throw new RuntimeException(
+                    "Falha ao gerar token [" + modulo + "]: " + e.getResponseBodyAsString()
+            );
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao autenticar: " + e.getMessage(), e);
+            throw new RuntimeException(
+                    "Erro ao autenticar [" + modulo + "]: " + e.getMessage(), e
+            );
         }
     }
 
-    private boolean isTokenValid() {
-        return cachedToken != null
-                && tokenExpiresAt != null
-                && LocalDateTime.now().isBefore(tokenExpiresAt);
+    private boolean isTokenValido(String token, LocalDateTime expiresAt) {
+        return token != null
+                && expiresAt != null
+                && LocalDateTime.now().isBefore(expiresAt);
     }
 }

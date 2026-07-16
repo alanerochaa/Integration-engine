@@ -60,14 +60,18 @@ public class LogService {
         );
     }
 
-    public void fimProcessamento(
-            String nomeArquivo,
-            String caminhoRelatorio
-    ) {
+    public void fimProcessamento(String nomeArquivo, String caminhoRelatorio,
+                                  long totalMs, long sucesso, long erro, long duplicado) {
         log.info(
-                "Processamento finalizado. Arquivo: {} | Relatório: {}",
-                nomeArquivo,
-                caminhoRelatorio
+                "Processamento finalizado. Arquivo: {} | Tempo: {}ms | Sucesso: {} | Erro: {} | Duplicado: {} | Relatório: {}",
+                nomeArquivo, totalMs, sucesso, erro, duplicado, caminhoRelatorio
+        );
+    }
+
+    public void respostaApi(String cpf, int httpStatus, String resposta) {
+        log.info(
+                "Resposta API externa. CPF: {} | HTTP: {} | Resposta: {}",
+                cpf, httpStatus, resposta
         );
     }
 }

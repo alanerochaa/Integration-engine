@@ -1,11 +1,11 @@
-package br.com.buni.integration.core.model.csv;
+package br.com.buni.integration.core.model.importrow;
 
 import com.opencsv.bean.CsvBindByName;
 import com.opencsv.bean.CsvIgnore;
 import lombok.Data;
 
 @Data
-public class ClienteCsv {
+public class ClienteImportRow {
 
     @CsvBindByName(column = "CNPJ")
     private String empresaCnpj;

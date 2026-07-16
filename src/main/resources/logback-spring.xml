@@ -1,37 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <configuration>
-
-    <!-- LOGS FORA DO SRC -->
-
     <property
             name="LOG_PATH"
             value="logs"/>
-
-    <!-- FORMATO -->
-
     <property
             name="LOG_PATTERN"
             value="%d{dd/MM/yyyy HH:mm:ss} | %-5level | %-45logger{45} | %msg%n"/>
-
-    <!-- CONSOLE -->
-
     <appender
             name="CONSOLE"
             class="ch.qos.logback.core.ConsoleAppender">
 
         <encoder>
-
             <pattern>
                 ${LOG_PATTERN}
             </pattern>
-
         </encoder>
 
     </appender>
-
-    <!-- ARQUIVO -->
-
     <appender
             name="FILE"
             class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -58,17 +44,12 @@
         </rollingPolicy>
 
         <encoder>
-
             <pattern>
                 ${LOG_PATTERN}
             </pattern>
-
         </encoder>
 
     </appender>
-
-    <!-- REDUZ BARULHO -->
-
     <logger
             name="org.springframework"
             level="WARN"/>
@@ -81,14 +62,9 @@
             name="org.hibernate"
             level="WARN"/>
 
-    <!-- MOTOR -->
-
     <logger
             name="br.com.buni.integration.core"
             level="INFO"/>
-
-    <!-- RAIZ -->
-
     <root level="INFO">
 
         <appender-ref ref="CONSOLE"/>

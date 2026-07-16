@@ -1,23 +1,20 @@
 package br.com.buni.integration.core.controller;
 
-import br.com.buni.integration.core.model.csv.ClienteCsv;
+import br.com.buni.integration.core.model.dto.ImportacaoResponse;
 import br.com.buni.integration.core.model.dto.ProcessamentoResult;
+import br.com.buni.integration.core.model.importrow.ClienteImportRow;
+import br.com.buni.integration.core.model.importrow.FuncionarioImportRow;
 import br.com.buni.integration.core.service.ClienteImportService;
-import br.com.buni.integration.core.service.CsvService;
+import br.com.buni.integration.core.service.FileImportService;
+import br.com.buni.integration.core.service.FuncionarioImportService;
+import br.com.buni.integration.core.service.HistoricoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,77 +22,53 @@ import java.util.Map;
 @RequestMapping("/importar")
 public class ImportacaoClienteController {
 
-    private final CsvService csvService;
+    private final FileImportService fileImportService;
     private final ClienteImportService clienteImportService;
+    private final FuncionarioImportService funcionarioImportService;
+    private final HistoricoService historicoService;
 
     @PostMapping("/clientes")
-    public ResponseEntity<Map<String, Object>> importarClientes(
+    public ResponseEntity<ImportacaoResponse> importarClientes(
             @RequestParam("file") MultipartFile file
     ) {
-        // getOriginalFilename() pode retornar null em uploads programáticos
-        String filename = file.getOriginalFilename() != null
-                ? file.getOriginalFilename()
-                : "arquivo.csv";
-
-        List<ClienteCsv> clientes = csvService.lerClientes(file);
-
+        String filename = resolverNomeArquivo(file);
+        List<ClienteImportRow> clientes = fileImportService.lerClientes(file);
         ProcessamentoResult result = clienteImportService.processar(filename, clientes);
-
-        String nomeRelatorio = result.getCaminhoRelatorio().getFileName().toString();
-        String nomeExcel     = result.getCaminhoExcel().getFileName().toString();
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "status",        result.getStatusGeral(),
-                        "arquivo",       filename,
-                        "totalLinhas",   clientes.size(),
-                        "totalSucesso",  result.getTotalSucesso(),
-                        "totalErro",     result.getTotalErro(),
-                        "totalDuplicado",result.getTotalDuplicado(),
-                        "tempoTotalMs",  result.getTempoTotalMs(),
-                        "relatorio",     nomeRelatorio,
-                        "downloadUrl",   "/importar/relatorios/" + nomeRelatorio,
-                        "excelUrl",      "/importar/relatorios/" + nomeExcel
-                )
-        );
+        historicoService.registrar("CLIENTES", filename, clientes.size(), result);
+        return ResponseEntity.ok(toResponse(clientes.size(), result));
     }
 
-    @GetMapping("/relatorios/{nomeArquivo}")
-    public ResponseEntity<Resource> baixarRelatorio(
-            @PathVariable String nomeArquivo
+    @PostMapping("/funcionarios")
+    public ResponseEntity<ImportacaoResponse> importarFuncionarios(
+            @RequestParam("file") MultipartFile file
     ) {
-        // Prevenção de path traversal: rejeita nomes de arquivo com separadores de diretório ou ".."
-        if (nomeArquivo.contains("..") || nomeArquivo.contains("/") || nomeArquivo.contains("\\")) {
-            log.warn("Nome de arquivo suspeito bloqueado no download do relatório: {}", nomeArquivo);
-            return ResponseEntity.badRequest().build();
-        }
+        String filename = resolverNomeArquivo(file);
+        List<FuncionarioImportRow> funcionarios = fileImportService.lerFuncionarios(file);
+        ProcessamentoResult result = funcionarioImportService.processar(filename, funcionarios);
+        historicoService.registrar("FUNCIONARIOS", filename, funcionarios.size(), result);
+        return ResponseEntity.ok(toResponse(funcionarios.size(), result));
+    }
 
-        Path outputDir = Path.of("output").toAbsolutePath().normalize();
-        Path caminho   = outputDir.resolve(nomeArquivo).normalize();
+    // ─── helpers ─────────────────────────────────────────────────────────────────
 
-        // Verifica que o caminho resolvido ainda está dentro do diretório de saída
-        if (!caminho.startsWith(outputDir)) {
-            log.warn("Tentativa de path traversal bloqueada: {}", nomeArquivo);
-            return ResponseEntity.badRequest().build();
-        }
+    private ImportacaoResponse toResponse(long processados, ProcessamentoResult result) {
+        String nomeRelatorio = result.getCaminhoRelatorio().getFileName().toString();
+        String nomeExcel     = result.getCaminhoExcel().getFileName().toString();
+        return ImportacaoResponse.builder()
+                .importId(result.getImportId())
+                .status(result.getStatusGeral())
+                .processados(processados)
+                .sucesso(result.getTotalSucesso())
+                .erro(result.getTotalErro())
+                .duplicado(result.getTotalDuplicado())
+                .tempoMs(result.getTempoTotalMs())
+                .downloadUrl("/download/" + nomeRelatorio)
+                .excelUrl("/download/" + nomeExcel)
+                .build();
+    }
 
-        Resource resource = new FileSystemResource(caminho);
-
-        if (!resource.exists()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        boolean isExcel = nomeArquivo.endsWith(".xlsx");
-        MediaType contentType = isExcel
-                ? MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                : MediaType.TEXT_HTML;
-        ContentDisposition disposition = isExcel
-                ? ContentDisposition.attachment().filename(nomeArquivo).build()
-                : ContentDisposition.inline().filename(nomeArquivo).build();
-
-        return ResponseEntity.ok()
-                .contentType(contentType)
-                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
-                .body(resource);
+    private String resolverNomeArquivo(MultipartFile file) {
+        String nome = file.getOriginalFilename();
+        return (nome != null && !nome.isBlank()) ? nome : "arquivo.csv";
     }
 }

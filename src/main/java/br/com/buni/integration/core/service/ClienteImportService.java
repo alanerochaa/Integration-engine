@@ -3,7 +3,7 @@ package br.com.buni.integration.core.service;
 import br.com.buni.integration.core.connector.BuniClienteConnector;
 import br.com.buni.integration.core.logging.LogService;
 import br.com.buni.integration.core.mapper.ClienteMapper;
-import br.com.buni.integration.core.model.csv.ClienteCsv;
+import br.com.buni.integration.core.model.importrow.ClienteImportRow;
 import br.com.buni.integration.core.model.dto.ExecutionReportLine;
 import br.com.buni.integration.core.model.dto.ProcessamentoResult;
 import br.com.buni.integration.core.model.request.ClienteRequest;
@@ -11,7 +11,7 @@ import br.com.buni.integration.core.model.response.InclusaoClienteResponse;
 import br.com.buni.integration.core.report.ExcelReportGenerator;
 import br.com.buni.integration.core.report.ImportacaoReportGenerator;
 import br.com.buni.integration.core.util.StringUtils;
-import br.com.buni.integration.core.validator.ClienteCsvValidator;
+import br.com.buni.integration.core.validator.ClienteValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -27,9 +27,9 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-public class ClienteImportService {
+public class ClienteImportService implements ImportProcessor<ClienteImportRow> {
 
-    private final ClienteCsvValidator validator;
+    private final ClienteValidator validator;
     private final ClienteMapper mapper;
     private final BuniClienteConnector clienteConnector;
     private final ImportacaoReportGenerator reportService;
@@ -43,7 +43,8 @@ public class ClienteImportService {
      * Processa um lote de clientes a partir de um arquivo CSV.
      * Todos os contadores são locais a cada chamada — seguro para requisições concorrentes (sem estado compartilhado).
      */
-    public ProcessamentoResult processar(String nomeArquivo, List<ClienteCsv> clientes) {
+    @Override
+    public ProcessamentoResult processar(String nomeArquivo, List<ClienteImportRow> clientes) {
 
         LocalDateTime start = LocalDateTime.now();
         String importId = buildImportId(start);
@@ -59,7 +60,7 @@ public class ClienteImportService {
 
         for (int i = 0; i < clientes.size(); i++) {
 
-            ClienteCsv cliente = clientes.get(i);
+            ClienteImportRow cliente = clientes.get(i);
             int linhaCsv = i + 2; // cabeçalho é linha 1, dados começam na linha 2
             String correlationId = buildCorrelationId(importId, linhaCsv);
             String cpfNormalizado = StringUtils.normalizarCpf(cliente.getCpf());
@@ -125,9 +126,10 @@ public class ClienteImportService {
 
         Path reportPath = reportService.gerarRelatorio(nomeArquivo, report);
         Path excelPath  = excelReportGenerator.gerarExcel(nomeArquivo, report);
-        logService.fimProcessamento(nomeArquivo, reportPath.toString());
+        logService.fimProcessamento(nomeArquivo, reportPath.toString(), totalMs, totalSucesso, totalErro, totalDuplicado);
 
         return ProcessamentoResult.builder()
+                .importId(importId)
                 .statusGeral(statusGeral)
                 .totalSucesso(totalSucesso)
                 .totalErro(totalErro)
@@ -138,7 +140,7 @@ public class ClienteImportService {
                 .build();
     }
 
-    private ExecutionReportLine buildSuccessLine(String arquivo, Integer linha, ClienteCsv cliente,
+    private ExecutionReportLine buildSuccessLine(String arquivo, Integer linha, ClienteImportRow cliente,
             InclusaoClienteResponse response, String importId, String correlationId, long tempoMs) {
         return ExecutionReportLine.builder()
                 .dataHoraExecucao(LocalDateTime.now())
@@ -153,7 +155,7 @@ public class ClienteImportService {
                 .build();
     }
 
-    private ExecutionReportLine buildBaseDuplicateLine(String arquivo, Integer linha, ClienteCsv cliente,
+    private ExecutionReportLine buildBaseDuplicateLine(String arquivo, Integer linha, ClienteImportRow cliente,
             String importId, String correlationId, long tempoMs) {
         return ExecutionReportLine.builder()
                 .dataHoraExecucao(LocalDateTime.now())
@@ -169,7 +171,7 @@ public class ClienteImportService {
                 .build();
     }
 
-    private ExecutionReportLine buildFileDuplicateLine(String arquivo, Integer linha, ClienteCsv cliente,
+    private ExecutionReportLine buildFileDuplicateLine(String arquivo, Integer linha, ClienteImportRow cliente,
             String importId, String correlationId, long tempoMs) {
         return ExecutionReportLine.builder()
                 .dataHoraExecucao(LocalDateTime.now())
@@ -185,7 +187,7 @@ public class ClienteImportService {
                 .build();
     }
 
-    private ExecutionReportLine buildValidationErrorLine(String arquivo, Integer linha, ClienteCsv cliente,
+    private ExecutionReportLine buildValidationErrorLine(String arquivo, Integer linha, ClienteImportRow cliente,
             List<String> erros, String importId, String correlationId, long tempoMs) {
 
         boolean isBancoError = erros.stream().anyMatch(e ->
@@ -219,7 +221,7 @@ public class ClienteImportService {
         return v != null ? v.trim() : "ausente";
     }
 
-    private ExecutionReportLine buildApiErrorLine(String arquivo, Integer linha, ClienteCsv cliente,
+    private ExecutionReportLine buildApiErrorLine(String arquivo, Integer linha, ClienteImportRow cliente,
             Exception e, String importId, String correlationId, long tempoMs) {
         return ExecutionReportLine.builder()
                 .dataHoraExecucao(LocalDateTime.now())

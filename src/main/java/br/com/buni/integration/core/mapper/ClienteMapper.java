@@ -1,7 +1,7 @@
 package br.com.buni.integration.core.mapper;
 
 import br.com.buni.integration.core.connector.CepConnector;
-import br.com.buni.integration.core.model.csv.ClienteCsv;
+import br.com.buni.integration.core.model.importrow.ClienteImportRow;
 import br.com.buni.integration.core.model.request.ClienteRequest;
 import br.com.buni.integration.core.model.response.CepResponse;
 import br.com.buni.integration.core.util.DateUtils;
@@ -17,7 +17,7 @@ public class ClienteMapper {
 
     private final CepConnector cepConnector;
 
-    public ClienteRequest toRequest(ClienteCsv csv) {
+    public ClienteRequest toRequest(ClienteImportRow csv) {
 
         ClienteRequest request = new ClienteRequest();
 
@@ -49,7 +49,7 @@ public class ClienteMapper {
         return request;
     }
 
-    private String resolverCpf(ClienteCsv csv) {
+    private String resolverCpf(ClienteImportRow csv) {
 
         String cpf = StringUtils.limparNumero(csv.getCpf());
 
@@ -95,15 +95,8 @@ public class ClienteMapper {
 
 
     private String resolverNome(String nome) {
-
-        if (StringUtils.vazio(nome)) {
-            return "";
-        }
-
-        return nome
-                .trim()
-                .replace("'", "")
-                .replace("\"", "");
+        if (StringUtils.vazio(nome)) return "";
+        return nome.trim();
     }
     private String gerarCpfValido(String base9) {
 
@@ -129,7 +122,7 @@ public class ClienteMapper {
 
         return base10 + digito2;
     }
-    private ClienteRequest.DadoEndereco montarEndereco(ClienteCsv csv) {
+    private ClienteRequest.DadoEndereco montarEndereco(ClienteImportRow csv) {
 
         ClienteRequest.Endereco endereco =
                 new ClienteRequest.Endereco();
@@ -183,7 +176,7 @@ public class ClienteMapper {
         return dadoEndereco;
     }
 
-    private ClienteRequest.Telefones montarTelefones(ClienteCsv csv) {
+    private ClienteRequest.Telefones montarTelefones(ClienteImportRow csv) {
 
         String telefone =
                 resolverTelefone(csv);
@@ -205,7 +198,7 @@ public class ClienteMapper {
         return telefones;
     }
 
-    private ClienteRequest.DadoProfissional montarProfissional(ClienteCsv csv) {
+    private ClienteRequest.DadoProfissional montarProfissional(ClienteImportRow csv) {
 
         ClienteRequest.DadoProfissional profissional =
                 new ClienteRequest.DadoProfissional();
@@ -237,7 +230,7 @@ public class ClienteMapper {
         return valor.substring(0, tamanho);
     }
 
-    private ClienteRequest.DadosBancarios montarDadosBancarios(ClienteCsv csv) {
+    private ClienteRequest.DadosBancarios montarDadosBancarios(ClienteImportRow csv) {
 
         ClienteRequest.DadoBancario dado =
                 new ClienteRequest.DadoBancario();
@@ -294,7 +287,7 @@ public class ClienteMapper {
      * Se vazio/não-numérico, tenta BANCO somente se for numérico.
      * Texto como "B.Uni" é descartado — o validador já terá gerado erro claro.
      */
-    private String resolverCodigoBanco(ClienteCsv csv) {
+    private String resolverCodigoBanco(ClienteImportRow csv) {
 
         String codBancoPagto = StringUtils.limparNumero(csv.getCompensacao());
 
@@ -320,7 +313,7 @@ public class ClienteMapper {
     }
 
 
-    private void registrarFallbackBancario(ClienteCsv csv) {
+    private void registrarFallbackBancario(ClienteImportRow csv) {
 
         String observacaoAtual =
                 csv.getObservacaoEndereco();
@@ -418,7 +411,7 @@ public class ClienteMapper {
         return "0"; // NAO_DEFINIDO
     }
 
-    private String resolverEmail(ClienteCsv csv) {
+    private String resolverEmail(ClienteImportRow csv) {
 
         String cpf = resolverCpf(csv);
 
@@ -452,7 +445,7 @@ public class ClienteMapper {
         return email.toLowerCase();
     }
 
-    private String resolverTelefone(ClienteCsv csv) {
+    private String resolverTelefone(ClienteImportRow csv) {
 
         String telefone1 = StringUtils.limparNumero(csv.getTelefone1());
         String telefone2 = StringUtils.limparNumero(csv.getTelefone2());

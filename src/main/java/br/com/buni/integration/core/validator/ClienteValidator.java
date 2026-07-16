@@ -1,16 +1,15 @@
 package br.com.buni.integration.core.validator;
 
-import br.com.buni.integration.core.model.csv.ClienteCsv;
+import br.com.buni.integration.core.model.importrow.ClienteImportRow;
 import br.com.buni.integration.core.util.StringUtils;
 import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class ClienteCsvValidator {
+public class ClienteValidator {
 
-    public List<String> validar(ClienteCsv cliente) {
+    public List<String> validar(ClienteImportRow cliente) {
 
         List<String> erros = new ArrayList<>();
 
@@ -35,11 +34,7 @@ public class ClienteCsvValidator {
         return erros;
     }
 
-    private void validarObrigatorio(
-            String valor,
-            String campo,
-            List<String> erros
-    ) {
+    private void validarObrigatorio(String valor, String campo, List<String> erros) {
         if (StringUtils.vazio(valor)) {
             erros.add("Campo obrigatório ausente: " + campo);
         }
@@ -81,10 +76,8 @@ public class ClienteCsvValidator {
         return second == d[10];
     }
 
-    private void validarEmail(
-            ClienteCsv cliente,
-            List<String> erros
-    ) {
+    private void validarEmail(ClienteImportRow cliente, List<String> erros) {
+
         String email = cliente.getEmailPessoal();
 
         if (StringUtils.vazio(email)) {
@@ -106,19 +99,15 @@ public class ClienteCsvValidator {
      * BANCO só é aceito como código bancário se for numérico.
      * Texto como "B.Uni" é ignorado — erro apenas se ambos forem inválidos/ausentes.
      */
-    private void validarBanco(ClienteCsv cliente, List<String> erros) {
+    private void validarBanco(ClienteImportRow cliente, List<String> erros) {
 
         String codBancoPagto = StringUtils.limparNumero(cliente.getCompensacao());
 
-        if (!codBancoPagto.isBlank()) {
-            return;
-        }
+        if (!codBancoPagto.isBlank()) return;
 
         String banco = StringUtils.limparNumero(cliente.getBanco());
 
-        if (!banco.isBlank()) {
-            return;
-        }
+        if (!banco.isBlank()) return;
 
         String valRecebido = "(CODBANCOPAGTO="
                 + nvl(cliente.getCompensacao())

@@ -11,8 +11,8 @@ public class RestTemplateConfig {
     @Bean
     public RestTemplate restTemplate() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(10_000); // 10s para estabelecer conexão
-        factory.setReadTimeout(30_000);    // 30s aguardando resposta da API/ViaCEP
+        factory.setConnectTimeout(10_000);
+        factory.setReadTimeout(30_000);
         return new RestTemplate(factory);
     }
 }
