@@ -2,7 +2,7 @@
   'use strict';
   var HEALTH_URL   = '/health';
   var POLL_MS      = 30_000;
-  var FRONTEND_URL = 'https://integration-engine-web.vercel.app';
+    var FRONTEND_URL = 'https://integration-engine-web-hml.vercel.app';
 
 
   var statusDot  = document.getElementById('status-dot');
