@@ -2,7 +2,7 @@
   'use strict';
   var HEALTH_URL   = '/health';
   var POLL_MS      = 30_000;
-  var FRONTEND_URL = 'http://localhost:5173';
+  var FRONTEND_URL = 'http://localhost:5176';
 
   var statusDot  = document.getElementById('status-dot');
   var statusText = document.getElementById('status-text');
