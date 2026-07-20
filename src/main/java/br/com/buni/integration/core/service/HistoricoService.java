@@ -8,6 +8,7 @@ import br.com.buni.integration.core.repository.ImportacaoRepository;
 import br.com.buni.integration.core.util.DateUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,12 +20,16 @@ import java.util.stream.Collectors;
 @Slf4j
 public class HistoricoService {
 
+    @Value("${app.base-url}")
+    private String baseUrl;
+
     private final ImportacaoRepository repository;
 
     public void registrar(TipoImportacao tipo, String arquivo, long totalLinhas, ProcessamentoResult result) {
 
         String nomeRelatorio = result.getCaminhoRelatorio().getFileName().toString();
         String nomeExcel     = result.getCaminhoExcel().getFileName().toString();
+        String base          = baseUrl.stripTrailing().replaceAll("/$", "");
 
         RegistroImportacao registro = RegistroImportacao.builder()
                 .id(result.getImportId())
@@ -39,8 +44,8 @@ public class HistoricoService {
                 .totalErro(result.getTotalErro())
                 .totalDuplicado(result.getTotalDuplicado())
                 .tempoProcessamentoMs(result.getTempoTotalMs())
-                .downloadUrl("/download/" + nomeRelatorio)
-                .excelUrl("/download/" + nomeExcel)
+                .downloadUrl(base + "/download/" + nomeRelatorio)
+                .excelUrl(base + "/download/" + nomeExcel)
                 .build();
 
         repository.salvar(registro);
