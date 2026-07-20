@@ -8,9 +8,10 @@ import br.com.buni.integration.core.util.DateUtils;
 import br.com.buni.integration.core.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 
+
+//Ajustar o mapper -
 @Component
 @RequiredArgsConstructor
 public class ClienteMapper {
@@ -30,7 +31,7 @@ public class ClienteMapper {
         request.setNacionalidade("1");
         request.setTipoDocumento("RG");
         request.setNumeroDocumento(cpf);
-        // Campos fixos (não existem no CSV)
+        // Campos fixos (não existem no CSV) apenas em HML Por hora
         request.setUfDocumento("SP");
         request.setDataEmissaoDocumento("2015-06-18T19:54:03Z");
         request.setOrgaoEmissorDocumento("SSP");

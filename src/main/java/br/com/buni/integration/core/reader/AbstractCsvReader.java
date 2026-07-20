@@ -4,7 +4,6 @@ import br.com.buni.integration.core.util.StringUtils;
 import com.opencsv.bean.CsvToBeanBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -25,16 +24,12 @@ public abstract class AbstractCsvReader<T> implements ImportFileReader<T> {
         try {
             Charset charset = Charset.forName(csvCharset);
 
-            // Lê os bytes uma única vez para evitar consumo duplo do stream
             String conteudo = new String(file.getBytes(), charset);
 
-            // Remove BOM UTF-8 (U+FEFF) caso presente — comum em arquivos gerados pelo Excel
             if (!conteudo.isEmpty() && conteudo.charAt(0) == '﻿') {
                 conteudo = conteudo.substring(1);
             }
 
-            // Normaliza acentos somente no header (primeira linha) para garantir
-            // que "MATRÍCULA", "DATAADMISSÃO" etc. sejam mapeados corretamente
             conteudo = normalizarHeaderAcentos(conteudo);
 
             char separador = descobrirSeparador(conteudo);

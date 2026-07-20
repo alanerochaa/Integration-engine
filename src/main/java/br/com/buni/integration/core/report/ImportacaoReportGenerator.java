@@ -1,6 +1,9 @@
 package br.com.buni.integration.core.report;
 
 import br.com.buni.integration.core.model.dto.ExecutionReportLine;
+import br.com.buni.integration.core.util.StringUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedWriter;
@@ -13,24 +16,34 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
+@Slf4j
 public class ImportacaoReportGenerator {
 
-    private static final String OUTPUT_DIR = "output";
+    @Value("${app.report.output-dir:output}")
+    private String outputDir;
+
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
     public Path gerarRelatorio(String nomeArquivo, List<ExecutionReportLine> linhas) {
         try {
-            Files.createDirectories(Path.of(OUTPUT_DIR));
-            String base       = limparNomeArquivo(nomeArquivo);
+            Path dir = Path.of(outputDir).toAbsolutePath().normalize();
+            Files.createDirectories(dir);
+
+            String base       = StringUtils.sanitizarNomeArquivo(nomeArquivo);
             String reportName = "relatorio_" + System.currentTimeMillis() + "_" + base + ".html";
-            Path   caminho    = Path.of(OUTPUT_DIR, reportName);
+            Path   caminho    = dir.resolve(reportName);
 
             try (BufferedWriter w = new BufferedWriter(
                     new FileWriter(caminho.toFile(), StandardCharsets.UTF_8))) {
                 w.write(buildHtml(nomeArquivo, linhas));
             }
+
+            log.info("[HTML] Relatório gerado — path={} | tamanho={} bytes",
+                    caminho, Files.size(caminho));
             return caminho;
         } catch (Exception e) {
+            log.error("[HTML] Falha ao gerar relatório — outputDir={} | erro={}",
+                    outputDir, e.getMessage(), e);
             throw new RuntimeException("Erro ao gerar relatório: " + e.getMessage(), e);
         }
     }
@@ -216,16 +229,6 @@ public class ImportacaoReportGenerator {
     }
 
     // ─── utilitários ────────────────────────────────────────────────────────────
-
-    private String limparNomeArquivo(String nome) {
-        if (nome == null || nome.isBlank()) return "arquivo";
-        nome = nome.replace("\\", "_").replace("/", "_").replace(" ", "_");
-        // Remove extensões .csv repetidas (Windows às vezes gera dupla extensão)
-        while (nome.toLowerCase().endsWith(".csv")) {
-            nome = nome.substring(0, nome.length() - 4);
-        }
-        return nome;
-    }
 
     private static String td(String content) {
         return "<td>" + content + "</td>";

@@ -1,9 +1,12 @@
 package br.com.buni.integration.core.report;
 
 import br.com.buni.integration.core.model.dto.ExecutionReportLine;
+import br.com.buni.integration.core.util.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.FileOutputStream;
@@ -13,9 +16,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
+@Slf4j
 public class ExcelReportGenerator {
 
-    private static final String OUTPUT_DIR = "output";
+    @Value("${app.report.output-dir:output}")
+    private String outputDir;
+
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
     private static final String[] HEADERS = {
@@ -28,23 +34,28 @@ public class ExcelReportGenerator {
 
     public Path gerarExcel(String nomeArquivo, List<ExecutionReportLine> linhas) {
         try {
-            Files.createDirectories(Path.of(OUTPUT_DIR));
-            String base       = limparNomeArquivo(nomeArquivo);
+            Path dir = Path.of(outputDir).toAbsolutePath().normalize();
+            Files.createDirectories(dir);
+
+            String base       = StringUtils.sanitizarNomeArquivo(nomeArquivo);
             String reportName = "relatorio_" + System.currentTimeMillis() + "_" + base + ".xlsx";
-            Path   caminho    = Path.of(OUTPUT_DIR, reportName);
+            Path   caminho    = dir.resolve(reportName);
 
             try (XSSFWorkbook wb  = new XSSFWorkbook();
                  FileOutputStream fos = new FileOutputStream(caminho.toFile())) {
                 build(wb, linhas);
                 wb.write(fos);
             }
+
+            log.info("[EXCEL] Relatório gerado — path={} | tamanho={} bytes",
+                    caminho, Files.size(caminho));
             return caminho;
         } catch (Exception e) {
+            log.error("[EXCEL] Falha ao gerar relatório — outputDir={} | erro={}",
+                    outputDir, e.getMessage(), e);
             throw new RuntimeException("Erro ao gerar Excel: " + e.getMessage(), e);
         }
     }
-
-    // ─── montagem ────────────────────────────────────────────────────────────────
 
     private void build(XSSFWorkbook wb, List<ExecutionReportLine> linhas) {
         XSSFSheet sheet = wb.createSheet("Relatório de Importação");
@@ -53,7 +64,6 @@ public class ExcelReportGenerator {
             sheet.setColumnWidth(i, COL_WIDTHS[i] * 256);
         }
 
-        // Linha 0 — título
         XSSFRow title = sheet.createRow(0);
         title.setHeightInPoints(26);
         XSSFCell tc = title.createCell(0);
@@ -61,7 +71,6 @@ public class ExcelReportGenerator {
         tc.setCellStyle(titleStyle(wb));
         sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, HEADERS.length - 1));
 
-        // Linha 1 — cabeçalho da tabela
         XSSFRow header = sheet.createRow(1);
         header.setHeightInPoints(18);
         XSSFCellStyle hs = headerStyle(wb);
@@ -69,7 +78,6 @@ public class ExcelReportGenerator {
 
         sheet.createFreezePane(0, 2);
 
-        // Linhas 2+ — dados
         int rowIdx = 2;
         for (ExecutionReportLine l : linhas) {
             XSSFRow row = sheet.createRow(rowIdx++);
@@ -181,13 +189,4 @@ public class ExcelReportGenerator {
 
     private String v(Object val) { return val == null ? "" : val.toString(); }
 
-    private String limparNomeArquivo(String nome) {
-        if (nome == null || nome.isBlank()) return "arquivo";
-        nome = nome.replace("\\", "_").replace("/", "_").replace(" ", "_");
-        while (nome.toLowerCase().endsWith(".csv")) nome = nome.substring(0, nome.length() - 4);
-        // Substitui qualquer caractere que não seja alfanumérico, hífen ou underscore
-        // para evitar ".." (path traversal) e outros padrões bloqueados por segurança
-        nome = nome.replaceAll("[^a-zA-Z0-9_\\-]", "_").replaceAll("_+", "_").replaceAll("^_|_$", "");
-        return nome.isBlank() ? "arquivo" : nome;
-    }
 }
