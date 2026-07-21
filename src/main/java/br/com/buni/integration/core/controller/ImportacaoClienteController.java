@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 
 @RestController
@@ -53,8 +52,6 @@ public class ImportacaoClienteController {
         historicoService.registrar(TipoImportacao.FUNCIONARIOS, filename, funcionarios.size(), result);
         return ResponseEntity.ok(toResponse(funcionarios.size(), result));
     }
-
-    // ─── helpers ─────────────────────────────────────────────────────────────────
 
     private ImportacaoResponse toResponse(long processados, ProcessamentoResult result) {
         String nomeRelatorio = result.getCaminhoRelatorio().getFileName().toString();

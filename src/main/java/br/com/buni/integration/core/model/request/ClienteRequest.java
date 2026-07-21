@@ -24,7 +24,6 @@ public class ClienteRequest {
     private String escolaridade;
     private String naturalidade;
     private String email;
-
     private DadoEndereco dadoEndereco;
     private Telefones telefones;
     private DadoProfissional dadoProfissional;

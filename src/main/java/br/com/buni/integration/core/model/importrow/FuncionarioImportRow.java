@@ -7,11 +7,9 @@ import lombok.Data;
 @Data
 public class FuncionarioImportRow {
 
-    // ─── Dados da Empresa ────────────────────────────────────────────────────────
     @CsvBindByName(column = "MATRICULA")
     private String matricula;
 
-    // ─── Dados Pessoais ──────────────────────────────────────────────────────────
     @CsvBindByName(column = "CPF")
     private String cpf;
 
@@ -60,7 +58,6 @@ public class FuncionarioImportRow {
     @CsvBindByName(column = "DATACADASTRO")
     private String dataCadastro;
 
-    // ─── Contato ─────────────────────────────────────────────────────────────────
     @CsvBindByName(column = "EMAIL")
     private String email;
 
@@ -70,7 +67,6 @@ public class FuncionarioImportRow {
     @CsvBindByName(column = "CELULAR")
     private String celular;
 
-    // ─── Endereço ────────────────────────────────────────────────────────────────
     @CsvBindByName(column = "CEP")
     private String cep;
 
@@ -92,14 +88,12 @@ public class FuncionarioImportRow {
     @CsvBindByName(column = "UF")
     private String uf;
 
-    // ─── Dados Empresa (complemento) ─────────────────────────────────────────────
     @CsvBindByName(column = "CARGO")
     private String cargo;
 
     @CsvBindByName(column = "TPVINCULO")
     private String tpVinculo;
 
-    // ─── Dados Bancários ─────────────────────────────────────────────────────────
     @CsvBindByName(column = "BANCO")
     private String banco;
 
@@ -115,21 +109,18 @@ public class FuncionarioImportRow {
     @CsvBindByName(column = "TIPODECONTA")
     private String tipoDeConta;
 
-    // ─── Rendas ──────────────────────────────────────────────────────────────────
     @CsvBindByName(column = "RENDABRUTA")
     private String rendaBruta;
 
     @CsvBindByName(column = "RENDALIQUIDA")
     private String rendaLiquida;
 
-    // ─── Dados Empresa (conclusão) ────────────────────────────────────────────────
     @CsvBindByName(column = "DATAADMISSAO")
     private String dataAdmissao;
 
     @CsvBindByName(column = "SITUACAO")
     private String situacao;
 
-    // ─── Origens ─────────────────────────────────────────────────────────────────
     @CsvBindByName(column = "CodOrg4")
     private String codOrg4;
 
@@ -139,7 +130,6 @@ public class FuncionarioImportRow {
     @CsvBindByName(column = "DescOrg5")
     private String descOrg5;
 
-    // ─── Controle interno ────────────────────────────────────────────────────────
     @CsvIgnore
     private String observacao;
 }

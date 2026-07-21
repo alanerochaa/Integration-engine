@@ -15,7 +15,6 @@ import br.com.buni.integration.core.validator.ClienteValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -39,10 +38,6 @@ public class ClienteImportService implements ImportProcessor<ClienteImportRow> {
     @Value("${buni.ambiente:HML}")
     private String ambiente;
 
-    /**
-     * Processa um lote de clientes a partir de um arquivo CSV.
-     * Todos os contadores são locais a cada chamada — seguro para requisições concorrentes (sem estado compartilhado).
-     */
     @Override
     public ProcessamentoResult processar(String nomeArquivo, List<ClienteImportRow> clientes) {
 

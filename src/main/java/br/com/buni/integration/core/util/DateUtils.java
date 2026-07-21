@@ -12,10 +12,6 @@ public class DateUtils {
     private static final DateTimeFormatter FORMATO_SAIDA_FUNCIONARIO =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    /**
-     * Formata data para o formato aceito pela API de Funcionários: yyyy-MM-dd HH:mm:ss.
-     * Suporta entradas: dd/MM/yyyy, dd/MM/yyyy HH:mm:ss, yyyy-MM-dd, yyyy-MM-dd HH:mm:ss.
-     */
     public static String formatarDataFuncionario(String data) {
 
         if (data == null || data.isBlank()) {
@@ -43,17 +39,10 @@ public class DateUtils {
         return input;
     }
 
-    /**
-     * Data/hora atual no formato aceito pela API de Funcionários: yyyy-MM-dd HH:mm:ss.
-     */
     public static String agoraIso() {
         return LocalDateTime.now().format(FORMATO_SAIDA_FUNCIONARIO);
     }
 
-    /**
-     * Converte data BR (dd/MM/yyyy) para ISO 8601 com timezone Z.
-     * Mantido para compatibilidade com o módulo de Clientes.
-     */
     public static String formatarDataBrParaIso(String data) {
 
         if (data == null || data.isBlank()) {

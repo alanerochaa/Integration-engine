@@ -10,14 +10,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
-
 import java.time.LocalDateTime;
 
-/**
- * Componente de autenticação OAuth reutilizável para todos os módulos da integração B.uni.
- * Cada módulo possui credenciais próprias e um cache de token independente.
- * A lógica HTTP de obtenção de token é compartilhada (sem duplicação).
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j

@@ -52,8 +52,6 @@ public class GlobalExceptionHandler {
                 "Erro interno do servidor. Tente novamente ou contate o suporte.", req.getRequestURI());
     }
 
-    // ─── helpers ─────────────────────────────────────────────────────────────────
-
     private ResponseEntity<ApiErrorResponse> build(int status, String erro, String mensagem, String path) {
         ApiErrorResponse body = ApiErrorResponse.builder()
                 .timestamp(DateUtils.agora())

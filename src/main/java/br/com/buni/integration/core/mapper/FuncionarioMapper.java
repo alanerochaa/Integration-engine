@@ -159,8 +159,6 @@ public class FuncionarioMapper {
         return o;
     }
 
-    // ─── Resolvers ───────────────────────────────────────────────────────────────
-
     private String resolverCpf(String cpf) {
         String limpo = StringUtils.limparNumero(cpf);
         if (StringUtils.vazio(limpo)) return limpo;

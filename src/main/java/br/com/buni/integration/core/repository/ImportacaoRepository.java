@@ -1,7 +1,6 @@
 package br.com.buni.integration.core.repository;
 
 import br.com.buni.integration.core.domain.importacao.RegistroImportacao;
-
 import java.util.List;
 import java.util.Optional;
 

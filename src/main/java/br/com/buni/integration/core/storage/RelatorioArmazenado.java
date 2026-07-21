@@ -20,18 +20,11 @@ import lombok.Getter;
 @Builder
 public class RelatorioArmazenado {
 
-    /** Nome do arquivo no formato sanitizado (ex: relatorio_1234_clientes.xlsx). */
     private final String nomeArquivo;
 
-    /**
-     * Chave de recuperação opaca — o significado varia por implementação.
-     * Para download, o frontend recebe /download/{referencia}.
-     */
     private final String referencia;
 
-    /** MIME type do conteúdo (ex: application/vnd.openxmlformats-..., text/html). */
     private final String contentType;
 
-    /** Tamanho em bytes do arquivo armazenado. */
     private final long tamanhoBytes;
 }

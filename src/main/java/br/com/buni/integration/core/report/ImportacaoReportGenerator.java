@@ -5,7 +5,6 @@ import br.com.buni.integration.core.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.nio.charset.StandardCharsets;
@@ -47,8 +46,6 @@ public class ImportacaoReportGenerator {
             throw new RuntimeException("Erro ao gerar relatório: " + e.getMessage(), e);
         }
     }
-
-    // ─── builder ────────────────────────────────────────────────────────────────
 
     private String buildHtml(String nomeArquivo, List<ExecutionReportLine> linhas) {
         long sucesso   = linhas.stream().filter(l -> "SUCESSO".equals(l.getStatus())).count();

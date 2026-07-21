@@ -30,8 +30,6 @@ public class ExcelReportGenerator {
     };
     private static final int[] COL_WIDTHS = { 20, 16, 30, 13, 20, 44, 36 };
 
-    // ─── public ──────────────────────────────────────────────────────────────────
-
     public Path gerarExcel(String nomeArquivo, List<ExecutionReportLine> linhas) {
         try {
             Path dir = Path.of(outputDir).toAbsolutePath().normalize();
@@ -101,8 +99,6 @@ public class ExcelReportGenerator {
         }
     }
 
-    // ─── estilos ─────────────────────────────────────────────────────────────────
-
     private XSSFCellStyle titleStyle(XSSFWorkbook wb) {
         XSSFCellStyle s = wb.createCellStyle();
         s.setFillForegroundColor(rgb(wb, "0c2340"));
@@ -166,8 +162,6 @@ public class ExcelReportGenerator {
         s.setFont(f);
         return s;
     }
-
-    // ─── utilitários ─────────────────────────────────────────────────────────────
 
     private void cell(XSSFRow row, int col, String val, XSSFCellStyle style) {
         XSSFCell c = row.createCell(col);

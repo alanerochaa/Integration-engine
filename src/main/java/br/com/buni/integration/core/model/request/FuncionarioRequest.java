@@ -31,8 +31,6 @@ public class FuncionarioRequest {
     @JsonProperty("Origem5")
     private Origem5 origem5;
 
-    // ─── DadosPessoais ───────────────────────────────────────────────────────────
-
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class DadosPessoais {
@@ -89,8 +87,6 @@ public class FuncionarioRequest {
         private String codNacionalidade;
     }
 
-    // ─── Contato ─────────────────────────────────────────────────────────────────
-
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Contato {
@@ -120,8 +116,6 @@ public class FuncionarioRequest {
         private Endereco endereco;
     }
 
-    // ─── Endereco ────────────────────────────────────────────────────────────────
-
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Endereco {
@@ -148,8 +142,6 @@ public class FuncionarioRequest {
         private String bairro;
     }
 
-    // ─── DadosEmpresa ────────────────────────────────────────────────────────────
-
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class DadosEmpresa {
@@ -169,8 +161,6 @@ public class FuncionarioRequest {
         @JsonProperty("DataAdmissao")
         private String dataAdmissao;
     }
-
-    // ─── DadosBancarios ──────────────────────────────────────────────────────────
 
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -194,8 +184,6 @@ public class FuncionarioRequest {
         @JsonProperty("AgenciaDig")
         private String agenciaDig;
     }
-
-    // ─── RendaMargem ─────────────────────────────────────────────────────────────
 
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -244,7 +232,6 @@ public class FuncionarioRequest {
         private Integer idFunc;
     }
 
-    // ─── Origem4 ─────────────────────────────────────────────────────────────────
 
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -253,8 +240,6 @@ public class FuncionarioRequest {
         @JsonProperty("CodOrg4")
         private String codOrg4;
     }
-
-    // ─── Origem5 ─────────────────────────────────────────────────────────────────
 
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
